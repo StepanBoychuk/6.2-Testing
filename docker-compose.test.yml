@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  db-test:
+    image: mongo:latest
+    ports:
+      - '27018:27017'
+    networks:
+      - local
+
+networks:
+  local:

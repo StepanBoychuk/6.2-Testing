@@ -35,32 +35,40 @@ describe('UsersController', () => {
 
   describe('getAllUsers', () => {
     it('should return an array of users', async () => {
-      const result = [{}, {}] as User[];
-      jest.spyOn(usersService, 'findAll').mockResolvedValue(result);
+      const page = 1 as number; //default number
+      const perPage = 4 as number; //default number
+      const response = [{}, {}] as User[];
+      jest.spyOn(usersService, 'findAll').mockResolvedValue(response);
+      const result = await usersController.getAllUsers();
+      expect(result).toBe(response);
+      expect(usersService.findAll).toHaveBeenCalledWith(page, perPage);
     });
   });
 
   describe('findOne', () => {
     it('should return a user and set the Last-Modified header', async () => {
-      const mokeResponce = {
+      const userId = 'someId' as string;
+      const mockResponce = {
         set: jest.fn().mockReturnThis(),
         send: jest.fn(),
       } as unknown as Response;
-      const user = { _id: 'someId', updatedAt: new Date() } as any;
+      const user = { _id: userId, updatedAt: new Date() } as any;
       jest.spyOn(usersService, 'findOneById').mockResolvedValue(user);
 
-      await usersController.findOne('someId', mokeResponce);
+      await usersController.findOne(userId, mockResponce);
 
-      expect(mokeResponce.set).toHaveBeenCalledWith(
+      expect(usersService.findOneById).toHaveBeenCalledWith(userId);
+      expect(mockResponce.set).toHaveBeenCalledWith(
         'Last-Modified',
         user.updatedAt,
       );
-      expect(mokeResponce.send).toHaveBeenCalledWith(user);
+      expect(mockResponce.send).toHaveBeenCalledWith(user);
     });
   });
 
   describe('updateUser', () => {
     it('should update and return the user', async () => {
+      const userId = 'someId' as string;
       const result = {} as User;
       const updateData: UpdateUserDto = {
         username: 'testusername',
@@ -70,18 +78,19 @@ describe('UsersController', () => {
       };
       jest.spyOn(usersService, 'update').mockResolvedValue(result);
 
-      expect(await usersController.updateUser('someId', updateData)).toBe(
-        result,
-      );
+      expect(await usersController.updateUser(userId, updateData)).toBe(result);
+      expect(usersService.update).toHaveBeenCalledWith(userId, updateData);
     });
   });
 
   describe('deleteUser', () => {
     it('should soft delete user and return users deleted date and time', async () => {
+      const userId = 'someId' as string;
       const result = {} as User;
       jest.spyOn(usersService, 'delete').mockResolvedValue(result);
 
-      expect(await usersController.deleteUser('someId')).toBe(result);
+      expect(await usersController.deleteUser(userId)).toBe(result);
+      expect(usersService.delete).toHaveBeenCalledWith(userId);
     });
   });
 });

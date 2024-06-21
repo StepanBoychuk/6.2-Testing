@@ -7,6 +7,12 @@ import * as request from 'supertest';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication;
+  //create variables for all needed JWT tokens
+  let userForUpdateDataToken: string;
+  let userForInvalidUpdateToken: string;
+  let adminToken: string;
+  let userForDeleteToken: string;
+  let userForInvalidDeleteToken: string;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -15,6 +21,59 @@ describe('UsersController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
+  });
+
+  beforeAll(async () => {
+    //get all needed JWT tokens
+    const userForUpdateDataSignInDto: SignInDto = {
+      username: 'userForUpdateData',
+      password: 'password',
+    };
+    const userForInvalidUpdateSignInDto: SignInDto = {
+      username: 'userForInvalidUpdate',
+      password: 'password',
+    };
+    const adminSignInDto: SignInDto = {
+      username: 'admin',
+      password: 'admin',
+    };
+    const userForDeleteDto: SignInDto = {
+      username: 'userForDelete',
+      password: 'password',
+    };
+    const userForInvalidDeleteDto: SignInDto = {
+      username: 'userForInvalidDelete',
+      password: 'password',
+    };
+
+    const getUserForUpdateDataToken = await request(app.getHttpServer())
+      .post('/api/users/signin')
+      .send(userForUpdateDataSignInDto)
+      .expect(200);
+    const getUserForInvalidUpdateToken = await request(app.getHttpServer())
+      .post('/api/users/signin')
+      .send(userForInvalidUpdateSignInDto)
+      .expect(200);
+    const getAdminToken = await request(app.getHttpServer())
+      .post('/api/users/signin')
+      .send(adminSignInDto)
+      .expect(200);
+    const getUserForDeleteToken = await request(app.getHttpServer())
+      .post('/api/users/signin')
+      .send(userForDeleteDto)
+      .expect(200);
+    const getUserForInvalidDeleteToken = await request(app.getHttpServer())
+      .post('/api/users/signin')
+      .send(userForInvalidDeleteDto)
+      .expect(200);
+
+    userForUpdateDataToken = getUserForUpdateDataToken.headers.authorization;
+    userForInvalidUpdateToken =
+      getUserForInvalidUpdateToken.headers.authorization;
+    adminToken = getAdminToken.headers.authorization;
+    userForDeleteToken = getUserForDeleteToken.headers.authorization;
+    userForInvalidDeleteToken =
+      getUserForInvalidDeleteToken.headers.authorization;
   });
 
   afterAll(async () => {
@@ -71,19 +130,10 @@ describe('UsersController (e2e)', () => {
     };
     it('should update users data and return status code 200 with updated user', async () => {
       const userId = '60d5ecf5f9d74e30c8d59d02'; //userForUpdateData id
-      const signInDto: SignInDto = {
-        username: 'userForUpdateData',
-        password: 'password',
-      };
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
 
       const response = await request(app.getHttpServer())
         .put('/api/users/' + userId)
-        .set('Authorization', token)
+        .set('Authorization', userForUpdateDataToken)
         .send(updateUserDto)
         .expect(200);
 
@@ -97,19 +147,10 @@ describe('UsersController (e2e)', () => {
 
     it('should return status code 401 if user try update not his own data', async () => {
       const wrongId = '60d5ecf5f9d74e30c8d59d01'; //id of another user
-      const signInDto: SignInDto = {
-        username: 'userForInvalidUpdate',
-        password: 'password',
-      };
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
 
       const response = await request(app.getHttpServer())
         .put('/api/users/' + wrongId)
-        .set('Authorization', token)
+        .set('Authorization', userForInvalidUpdateToken)
         .send(updateUserDto)
         .expect(401);
 
@@ -120,19 +161,10 @@ describe('UsersController (e2e)', () => {
 
     it('should update another user data, if role in jwt token is admin', async () => {
       const userId = '60d5ecf5f9d74e30c8d59d02'; //userForUpdateData id
-      const signInDto: SignInDto = {
-        username: 'admin', //id: 60d5ecf5f9d74e30c8d59d04
-        password: 'admin',
-      };
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
 
       const response = await request(app.getHttpServer())
         .put('/api/users/' + userId)
-        .set('Authorization', token)
+        .set('Authorization', adminToken)
         .send(updateUserDto)
         .expect(200);
 
@@ -161,10 +193,6 @@ describe('UsersController (e2e)', () => {
 
     it('should return status 401 because of validation fails', async () => {
       const id = '60d5ecf5f9d74e30c8d59d03';
-      const signInDto: SignInDto = {
-        username: 'userForInvalidUpdate',
-        password: 'password',
-      };
 
       const invalidData: UpdateUserDto = {
         username: 'aa', //too short
@@ -173,15 +201,9 @@ describe('UsersController (e2e)', () => {
         lastName: 'newLastName',
       };
 
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
-
       const response = await request(app.getHttpServer())
         .put('/api/users/' + id)
-        .set('Authorization', token)
+        .set('Authorization', userForInvalidUpdateToken)
         .send(invalidData)
         .expect(400);
 
@@ -196,20 +218,10 @@ describe('UsersController (e2e)', () => {
   describe('api/users/:id (DEL)', () => {
     it('should set soft delete users account and return delete time', async () => {
       const userId = '60d5ecf5f9d74e30c8d59d04'; // userForDelete
-      const signInDto: SignInDto = {
-        username: 'userForDelete',
-        password: 'password',
-      };
-
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
 
       const response = await request(app.getHttpServer())
         .del('/api/users/' + userId)
-        .set('Authorization', token)
+        .set('Authorization', userForDeleteToken)
         .expect(200);
 
       const { body } = response;
@@ -220,20 +232,10 @@ describe('UsersController (e2e)', () => {
 
     it('should return status 401 if user try to delete not his own account', async () => {
       const userId = '60d5ecf5f9d74e30c8d59d06'; // admin
-      const signInDto: SignInDto = {
-        username: 'userForInvalidDelete',
-        password: 'password',
-      };
-
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
 
       const response = await request(app.getHttpServer())
         .del('/api/users/' + userId)
-        .set('Authorization', token)
+        .set('Authorization', userForInvalidDeleteToken)
         .expect(401);
 
       const { body } = response;
@@ -242,20 +244,10 @@ describe('UsersController (e2e)', () => {
     });
     it('user with role admin should delete another user account', async () => {
       const userId = '60d5ecf5f9d74e30c8d59d05'; // userForInvalidDelete
-      const signInDto: SignInDto = {
-        username: 'admin',
-        password: 'admin',
-      };
-
-      const getToken = await request(app.getHttpServer())
-        .post('/api/users/signin')
-        .send(signInDto)
-        .expect(200);
-      const token = getToken.headers.authorization;
 
       const response = await request(app.getHttpServer())
         .del('/api/users/' + userId)
-        .set('Authorization', token)
+        .set('Authorization', adminToken)
         .expect(200);
 
       const { body } = response;

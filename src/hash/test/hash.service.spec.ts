@@ -4,6 +4,7 @@ import * as crypto from 'crypto';
 
 describe('HashService', () => {
   let hashService: HashService;
+  let pbkdf2Spy: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,6 +16,9 @@ describe('HashService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    if (pbkdf2Spy) {
+      pbkdf2Spy.mockRestore();
+    }
   });
 
   it('should be defined', async () => {
@@ -28,7 +32,7 @@ describe('HashService', () => {
     it('should hash password correctly', async () => {
       const mockDerivedKey = Buffer.from('mockedhash', 'utf-8');
 
-      const pbkdf2Spy = jest
+      pbkdf2Spy = jest
         .spyOn(crypto, 'pbkdf2')
         .mockImplementation(
           (password, salt, iterations, keylen, digest, callback) => {
@@ -38,14 +42,12 @@ describe('HashService', () => {
       const result = await hashService.hashPassword(mockPassword);
 
       expect(result).toEqual(mockDerivedKey.toString('hex'));
-
-      pbkdf2Spy.mockRestore();
     });
 
     it('should return an error if hashing fails', async () => {
       const mockError = new Error('Hashing failed');
 
-      const pbkdf2Spy = jest
+      pbkdf2Spy = jest
         .spyOn(crypto, 'pbkdf2')
         .mockImplementation(
           (password, salt, iterations, keylen, digest, callback) => {
@@ -55,7 +57,6 @@ describe('HashService', () => {
       await expect(hashService.hashPassword(mockPassword)).rejects.toThrow(
         'Hashing failed',
       );
-      pbkdf2Spy.mockRestore();
     });
   });
 });

@@ -30,12 +30,20 @@ describe('AwsController', () => {
 
   describe('getLink', () => {
     it('should return presigned URL for file uploading', async () => {
+      const mockUser = {
+        id: 'someId',
+        username: 'testUsername',
+      } as any;
       const result = 'URLforfileupload' as string;
-      const fileName: AvatarDto = {
+      const avatarDto: AvatarDto = {
         fileName: 'testfilename.jpeg',
       };
       jest.spyOn(awsService, 'getPresignedURL').mockResolvedValue(result);
-      expect(await awsController.getLink(fileName, 'userId')).toBe(result);
+      expect(await awsController.getLink(avatarDto, mockUser)).toBe(result);
+      expect(awsService.getPresignedURL).toHaveBeenCalledWith(
+        mockUser.id,
+        avatarDto.fileName,
+      );
     });
   });
 });

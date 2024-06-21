@@ -53,7 +53,10 @@ describe('UsersService', () => {
     it('should return an array of users', async () => {
       const result = await usersService.findAll(1, 10);
       expect(result).toEqual([mockUser('1')]);
-      expect(userModel.find).toHaveBeenCalled();
+      expect(userModel.find).toHaveBeenCalledWith(
+        {},
+        'username firstName lastName avatarURL rating',
+      );
     });
   });
 

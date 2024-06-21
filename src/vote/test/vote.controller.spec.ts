@@ -31,18 +31,27 @@ describe('VoteController', () => {
   });
 
   describe('vote', () => {
+    const mockUser = {
+      id: 'someId',
+      username: 'testusername',
+    } as any;
     const voteDto: VoteDto = {
-      targetUser: 'userId',
+      targetUser: 'targetUserId',
       voteType: 1,
     };
     const result = {
       _id: 'voteId',
-      user: 'userId',
+      user: mockUser.id,
       ...voteDto,
     } as unknown as Vote;
     it('create or edit vote and return vote', async () => {
       jest.spyOn(voteService, 'vote').mockImplementation(() => result as any);
-      expect(await voteController.vote(voteDto, 'userId')).toBe(result);
+      expect(await voteController.vote(voteDto, mockUser)).toBe(result);
+      expect(voteService.vote).toHaveBeenCalledWith(
+        mockUser.id,
+        voteDto.targetUser,
+        voteDto.voteType,
+      );
     });
   });
 });

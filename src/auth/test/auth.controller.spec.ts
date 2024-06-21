@@ -46,6 +46,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'signUp').mockResolvedValue(result);
 
       expect(await authController.signUp(userDto)).toBe(result);
+      expect(authService.signUp).toHaveBeenCalledWith(userDto);
     });
 
     it('should throw an error if the user already exists', async () => {
@@ -59,6 +60,7 @@ describe('AuthController', () => {
       try {
         await authController.signUp(userDto);
       } catch (error) {
+        expect(authService.signUp).toHaveBeenCalledWith(userDto);
         expect(error).toBeInstanceOf(HttpException);
         expect(error.message).toBe('User with this username is already exist');
       }
@@ -88,6 +90,7 @@ describe('AuthController', () => {
       );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.send).toHaveBeenCalled();
+      expect(authService.signIn).toHaveBeenCalledWith(signInDto);
     });
 
     it('should return error if signIn fails', async () => {
@@ -97,6 +100,7 @@ describe('AuthController', () => {
       try {
         await authController.signIn(signInDto, mockResponse);
       } catch (error) {
+        expect(authService.signIn).toHaveBeenCalledWith(signInDto);
         expect(error).toBeInstanceOf(HttpException);
         expect(error.message).toBe('Wrong username or password');
       }

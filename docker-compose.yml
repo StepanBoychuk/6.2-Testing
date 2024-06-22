@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+    ports: 
+    - '${API_PORT}:3000'
+    command: npm run start:dev
+    networks:
+    - local
+    links:
+    - db
+    volumes: 
+    - .:/app
+  db:
+    image: mongo:latest
+    ports:
+    - '${DB_PORT}:27017'
+    networks:
+    - local
+    volumes:
+    - dbdata:/data/db
+
+volumes:
+  dbdata:
+
+networks:
+  local:
+  
